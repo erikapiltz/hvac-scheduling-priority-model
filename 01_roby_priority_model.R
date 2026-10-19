@@ -1,9 +1,7 @@
 # ============================================================
 # 01_roby_priority_model.R
-# Ginger/FMX/Compass model, including campus-wide Kentlake.
 #
 # Target: 232 NEW planning candidates.
-# Mattson is tracked separately and is NOT deducted from 232.
 #
 # Every ranked room must exist in the FMX input.
 # Campus Compass coverage supports candidate screening;
