@@ -83,7 +83,7 @@ include_classrooms_after_shared <- TRUE
 # recorded in room_verification below.
 require_individual_compass_confirmation <- FALSE
 
-# Ginger's recommendation: fuel category alone does not
+# HVAC tech's recommendation: fuel category alone does not
 # penalize or exclude a room.
 heating_score_weight <- 0
 
@@ -139,7 +139,7 @@ broad_bundle_threshold <- 10L
 priority_tier_labels <- c(
   "1" = "1. KW/KR nominated or previously allowed shared spaces",
   "2" = "2. Middle-school shared spaces and nominated rooms",
-  "3" = "3. Ginger's elementary/Kentlake spaces; verified Admin Board Room",
+  "3" = "3. HVAC tech's elementary/Kentlake spaces; verified Admin Board Room",
   "4" = "4. Other previously requested shared spaces",
   "5" = "5. Other shared spaces",
   "6" = "6. Other indoor rooms",
@@ -432,7 +432,7 @@ safe_minmax <- function(x) {
 # Do not substitute Site EUI or Source EUI into this column.
 #
 # Original heating classifications remain FALLBACK data.
-# Ginger's corrections below take precedence.
+# HVAC tech's corrections below take precedence.
 #
 # Heating codes are categories, not measured fuel percentages:
 # 0 = electric; .5 = mixed; 1 = gas category; NA = unknown.
@@ -551,10 +551,10 @@ summer_notes <- tribble(
 
 already_roby_schools <- "Mattson Middle School"
 
-ginger_source <-
-  "Ginger Ott - Roby Room Breakdown emails, 2026-09-09"
+HVAC tech_source <-
+  "HVAC tech Ott - Roby Room Breakdown emails, 2026-09-09"
 
-ginger_electric <- c(
+HVAC tech_electric <- c(
   "SC", "SB", "CV", "HE", "EH", "CC", "JC"
 )
 
@@ -563,7 +563,7 @@ school_lookup <- school_lookup |>
     legacy_heating_gas_code = heating_gas_code,
     
     heating_gas_code = case_when(
-      allowed_prefix %in% ginger_electric ~ 0,
+      allowed_prefix %in% HVAC tech_electric ~ 0,
       
       # Gas gym units contradict the earlier whole-campus
       # electric classification. Other MC rooms remain unknown.
@@ -573,17 +573,17 @@ school_lookup <- school_lookup |>
     ),
     
     heating_source = case_when(
-      allowed_prefix %in% ginger_electric ~
-        ginger_source,
+      allowed_prefix %in% HVAC tech_electric ~
+        HVAC tech_source,
       
       allowed_prefix == "MC" ~
-        paste(ginger_source, "- gas gym units; rest unknown"),
+        paste(HVAC tech_source, "- gas gym units; rest unknown"),
       
       is.na(heating_gas_code) ~
         "Unknown",
       
       TRUE ~
-        "Earlier user-marked chart; Ginger supplied no replacement for this campus"
+        "Earlier user-marked chart; HVAC tech supplied no replacement for this campus"
     ),
     
     heating_system = case_when(
@@ -606,7 +606,7 @@ school_lookup <- school_lookup |>
         "KSD confirmation in this discussion",
       
       allowed_prefix %in% "KL" ~
-        "Ginger confirmation relayed by Erika: all of Kentlake High School is on Compass",
+        "HVAC tech confirmation relayed by Erika: all of Kentlake High School is on Compass",
       
       TRUE ~
         "School-wide coverage unconfirmed; use room-specific evidence"
@@ -797,7 +797,7 @@ prior_hs_rooms <- tribble(
   )
 
 
-# 6B. Ginger's requests: match against FMX, never create rooms ----
+# 6B. HVAC tech's requests: match against FMX, never create rooms ----
 
 # Patterns are matching rules, not aliases or controller proof.
 # Matched candidates retain the actual FMX resource name.
@@ -914,7 +914,7 @@ requests_for <- function(prefixes, keys) {
   )
 }
 
-ginger_requests <- bind_rows(
+HVAC tech_requests <- bind_rows(
   requests_for(
     "KR",
     c(
@@ -999,11 +999,11 @@ ginger_requests <- bind_rows(
       request_key,
       sep = "_"
     ),
-    request_source = ginger_source
+    request_source = HVAC tech_source
   )
 
 stopifnot(
-  !anyDuplicated(ginger_requests$request_item),
+  !anyDuplicated(HVAC tech_requests$request_item),
   !anyDuplicated(school_lookup$canonical_building),
   
   !anyDuplicated(
@@ -1265,7 +1265,7 @@ extract_resource_prefix <- function(x) {
 # 8. Read requests and build the observed FMX catalog -----------
 
 progress(
-  "Building the FMX resource catalog and matching Ginger's requests..."
+  "Building the FMX resource catalog and matching HVAC tech's requests..."
 )
 
 resource_raw <- get_col(
@@ -1424,10 +1424,10 @@ fmx_catalog <- events_base |>
 
 nomination_matches <- bind_rows(
   lapply(
-    seq_len(nrow(ginger_requests)),
+    seq_len(nrow(HVAC tech_requests)),
     function(i) {
       
-      q <- ginger_requests[i, ]
+      q <- HVAC tech_requests[i, ]
       
       scope <- if (q$allowed_prefix == "ADMIN") {
         str_detect(
@@ -1473,12 +1473,12 @@ nomination_flags <- nomination_matches |>
     resource_key
   ) |>
   summarise(
-    ginger_requested = TRUE,
+    HVAC tech_requested = TRUE,
     
     request_items =
       collapse_values(request_item),
     
-    ginger_requested_spaces =
+    HVAC tech_requested_spaces =
       collapse_values(requested_space),
     
     type_override = first(
@@ -1527,8 +1527,8 @@ room_registry <- fmx_catalog |>
     na_matches = "never"
   ) |>
   mutate(
-    ginger_requested = coalesce(
-      ginger_requested,
+    HVAC tech_requested = coalesce(
+      HVAC tech_requested,
       FALSE
     ),
     
@@ -1557,7 +1557,7 @@ room_registry <- fmx_catalog |>
     ),
     
     board_requested =
-      ginger_requested & resource_type == "Board Room",
+      HVAC tech_requested & resource_type == "Board Room",
     
     fmx_resource_present = TRUE,
     
@@ -1578,7 +1578,7 @@ room_registry <- fmx_catalog |>
     in_requested_scope =
       coalesce(compass_school_eligible, FALSE) |
       prior_hs_allowed |
-      ginger_requested |
+      HVAC tech_requested |
       coalesce(room_compass_confirmed, FALSE),
     
     # A nomination is not a verified controller mapping.
@@ -1593,7 +1593,7 @@ room_registry <- fmx_catalog |>
         "Campus confirmed; room mapping pending",
       
       allowed_prefix %in% c("KW", "KR") &
-        (prior_hs_allowed | ginger_requested) ~
+        (prior_hs_allowed | HVAC tech_requested) ~
         "Reported likely",
       
       TRUE ~
@@ -1612,9 +1612,9 @@ room_registry <- fmx_catalog |>
         "Prior KSD room-specific Compass report; mapping pending",
       
       allowed_prefix %in% c("KW", "KR") &
-        ginger_requested ~
+        HVAC tech_requested ~
         paste(
-          ginger_source,
+          HVAC tech_source,
           "- nominated, not room-mapped"
         ),
       
@@ -1714,9 +1714,9 @@ room_registry <- fmx_catalog |>
       !coalesce(compass_school_eligible, FALSE) &
       in_requested_scope,
     
-    # Ginger's room-level heating evidence overrides the
+    # HVAC tech's room-level heating evidence overrides the
     # school-level fallback for these identified spaces.
-    ginger_room_gas =
+    HVAC tech_room_gas =
       (
         allowed_prefix %in% c("MC", "KL") &
           resource_type == "Gym"
@@ -1730,19 +1730,19 @@ room_registry <- fmx_catalog |>
       ),
     
     room_heating_gas_code = if_else(
-      ginger_room_gas,
+      HVAC tech_room_gas,
       1,
       heating_gas_code
     ),
     
     room_heating_source = if_else(
-      ginger_room_gas,
-      ginger_source,
+      HVAC tech_room_gas,
+      HVAC tech_source,
       heating_source
     ),
     
     room_heating_description = if_else(
-      ginger_room_gas,
+      HVAC tech_room_gas,
       "Gas-served equipment; whole-school boiler dependence NOT established",
       heating_system
     ),
@@ -1752,7 +1752,7 @@ room_registry <- fmx_catalog |>
         allowed_prefix %in%
           c("KW", "KR", "MC", "CH", "MM", "NW", "CR"),
         
-        "Ginger: coordinate associated bathroom exhaust fans if possible. ",
+        "HVAC tech: coordinate associated bathroom exhaust fans if possible. ",
         ""
       ),
       
@@ -1760,7 +1760,7 @@ room_registry <- fmx_catalog |>
         allowed_prefix %in% "KW" &
           resource_type == "PAC/Auditorium/Stage",
         
-        "Ginger: coordinate PAC dressing-room units and exhaust fans. ",
+        "HVAC tech: coordinate PAC dressing-room units and exhaust fans. ",
         ""
       ),
       
@@ -2005,11 +2005,11 @@ write_csv(
 )
 
 write_csv(
-  ginger_requests,
+  HVAC tech_requests,
   
   file.path(
     output_dir,
-    "roby_ginger_requested_spaces.csv"
+    "roby_HVAC tech_requested_spaces.csv"
   )
 )
 
@@ -2776,8 +2776,8 @@ room_attributes <- room_registry |>
     all_of(room_keys),
     resource,
     resource_type,
-    ginger_requested,
-    ginger_requested_spaces,
+    HVAC tech_requested,
+    HVAC tech_requested_spaces,
     request_items,
     prior_hs_allowed,
     exception_allowed,
@@ -3084,14 +3084,14 @@ rank_model <- function(weights = recency_weights) {
       # No room absent from FMX can reach this point.
       priority_tier = case_when(
         allowed_prefix %in% c("KW", "KR") &
-          (ginger_requested | prior_hs_allowed) ~
+          (HVAC tech_requested | prior_hs_allowed) ~
           1L,
         
         school_level == "Middle" &
-          (ginger_requested | is_core_shared_space) ~
+          (HVAC tech_requested | is_core_shared_space) ~
           2L,
         
-        ginger_requested ~
+        HVAC tech_requested ~
           3L,
         
         resource_type == "Classroom/Instructional" ~
@@ -3395,7 +3395,7 @@ simplified_rank_room_install_with_review <- top_232_rooms |>
     school = building,
     roby_install_room = resource,
     priority_tier,
-    ginger_requested,
+    HVAC tech_requested,
     fmx_resource_present,
     school_compass_confirmed,
     room_compass_confirmed,
@@ -3415,8 +3415,8 @@ room_opportunity_review <- room_priority |>
     resource,
     recommended_for_roby,
     priority_tier,
-    ginger_requested,
-    ginger_requested_spaces,
+    HVAC tech_requested,
+    HVAC tech_requested_spaces,
     room_priority_score,
     scheduling_opportunity_band,
     evidence_confidence,
@@ -3482,10 +3482,10 @@ coverage_detail <- nomination_matches |>
 
 request_coverage <- bind_rows(
   lapply(
-    seq_len(nrow(ginger_requests)),
+    seq_len(nrow(HVAC tech_requests)),
     function(i) {
       
-      q <- ginger_requests[i, ]
+      q <- HVAC tech_requests[i, ]
       
       m <- coverage_detail |>
         filter(
@@ -3547,7 +3547,7 @@ admin_board_fmx_review <- room_registry |>
 
 pending_compass_review <- room_registry |>
   filter(
-    (ginger_requested | prior_hs_allowed) &
+    (HVAC tech_requested | prior_hs_allowed) &
       !both_operational_conditions_confirmed
   )
 
@@ -3820,7 +3820,7 @@ qa_checks <- bind_rows(
       top_232_rooms$priority_tier[
         top_232_rooms$resource_type ==
           "Classroom/Instructional" &
-          !top_232_rooms$ginger_requested
+          !top_232_rooms$HVAC tech_requested
       ] == 7L
     )
   ),
@@ -3850,7 +3850,7 @@ qa_checks <- bind_rows(
   ),
   
   check(
-    "Ginger overrides East Hill and Carriage Crest",
+    "HVAC tech overrides East Hill and Carriage Crest",
     
     all(
       school_lookup$heating_gas_code[
@@ -3920,7 +3920,7 @@ write_csv(
   
   file.path(
     output_dir,
-    "roby_ginger_request_coverage.csv"
+    "roby_HVAC tech_request_coverage.csv"
   )
 )
 
@@ -3985,7 +3985,7 @@ candidate_summary <- tibble(
   installation_ready_records =
     nrow(installation_ready_rooms),
   
-  ginger_items_not_found =
+  HVAC tech_items_not_found =
     sum(request_coverage$matching_fmx_labels == 0)
 )
 
@@ -4107,7 +4107,7 @@ outputs <- list(
   roby_cleaned_room_events =
     cleaned_event_export,
   
-  roby_ginger_request_coverage =
+  roby_HVAC tech_request_coverage =
     request_coverage,
   
   roby_pending_compass_verification =
@@ -4155,7 +4155,7 @@ if (
         Room_Priority_All = room_priority,
         School_Priority = school_priority,
         Opportunity_Review = room_opportunity_review,
-        Ginger_Coverage = request_coverage,
+        HVAC tech_Coverage = request_coverage,
         Compass_Review = pending_compass_review,
         Heating_Inputs = heating_lookup,
         Summer_Context = summer_inputs,
@@ -4191,7 +4191,7 @@ metadata <- list(
     "KSD_Roby_v3",
   
   revision =
-    "Ginger_FMX_Compass_Kentlake_2026-09-14",
+    "HVAC tech_FMX_Compass_Kentlake_2026-09-14",
   
   analysis_as_of =
     analysis_as_of,
@@ -4254,7 +4254,7 @@ saveRDS(
     missing_wneui = missing_wneui,
     priority_tier_summary = priority_tier_summary,
     sensitivity = sensitivity,
-    ginger_request_coverage = request_coverage
+    HVAC tech_request_coverage = request_coverage
   ),
   
   rds_path
@@ -4294,5 +4294,5 @@ progress(
 
 message(
   "Planning candidates are not a verified install list. ",
-  "See FMX/Compass checks and Ginger coverage."
+  "See FMX/Compass checks and HVAC tech coverage."
 )
